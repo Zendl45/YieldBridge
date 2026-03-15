@@ -1,48 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
-import { createAppKit } from "@reown/appkit";
-import { EthersAdapter } from "@reown/appkit-adapter-ethers";
-import { defineChain } from "@reown/appkit/networks";
+import EthereumProvider from "@walletconnect/ethereum-provider";
 
-// ─── BSC Testnet chain definition ────────────────────────────────────────────
-const bscTestnet = defineChain({
-  id: 97,
-  caipNetworkId: "eip155:97",
-  chainNamespace: "eip155",
+// ─── Config ───────────────────────────────────────────────────────────────────
+const WC_PROJECT_ID = "f55a908b9f8b3a206393ca2708d25b2e";
+
+const BSC_TESTNET = {
+  chainId: 97,
+  chainIdHex: "0x61",
   name: "BNB Smart Chain Testnet",
-  nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
-  rpcUrls: { default: { http: ["https://data-seed-prebsc-1-s1.binance.org:8545/"] } },
-  blockExplorers: { default: { name: "BscScan", url: "https://testnet.bscscan.com" } },
-});
-
-// ─── AppKit / WalletConnect setup ────────────────────────────────────────────
-const PROJECT_ID = "f55a908b9f8b3a206393ca2708d25b2e";
-
-const modal = createAppKit({
-  adapters: [new EthersAdapter()],
-  networks: [bscTestnet],
-  projectId: PROJECT_ID,
-  metadata: {
-    name: "YieldBridge",
-    description: "The Smartest RWA Yield Router on BNB Chain",
-    url: "https://yield-bridge.vercel.app",
-    icons: ["https://yield-bridge.vercel.app/favicon.svg"],
-  },
-  features: {
-    analytics: false,
-    email: false,
-    socials: false,
-  },
-  themeMode: "dark",
-  themeVariables: {
-    "--w3m-accent": "#f0b429",
-    "--w3m-border-radius-master": "12px",
-  },
-});
-
-// ─── Contract Config ──────────────────────────────────────────────────────────
-const CONFIG = {
+  rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
   explorer: "https://testnet.bscscan.com",
+  nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
+};
+
+const CONFIG = {
+  explorer: BSC_TESTNET.explorer,
   contracts: {
     yieldBridge:  "0xC8573Ac3eB6594c6D52857A504632eC70d32a3fA",
     mockUSDT:     "0x8E8BF976C7fe7072Bc15b2c2Cad985874Ee65F58",
@@ -82,116 +55,138 @@ function shortAddr(a) { return a ? a.slice(0,6) + "..." + a.slice(-4) : ""; }
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --bg:#060b14; --surface:rgba(255,255,255,0.04); --surface2:rgba(255,255,255,0.07);
-  --border:rgba(255,255,255,0.08); --border2:rgba(240,180,41,0.25);
-  --gold:#f0b429; --teal:#00d4aa; --text:#e8f0fe; --muted:#6b7fa3;
-  --red:#ff6b6b; --green:#10b981; --blue:#4facfe;
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#060b14;--surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);--border2:rgba(240,180,41,0.25);
+  --gold:#f0b429;--teal:#00d4aa;--text:#e8f0fe;--muted:#6b7fa3;
+  --red:#ff6b6b;--green:#10b981;--blue:#4facfe;
 }
-html,body,#root { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; overflow-x:hidden; }
-.bg-orbs { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden; }
-.orb { position:absolute;border-radius:50%;filter:blur(80px);opacity:0.15;animation:drift 20s ease-in-out infinite; }
-.orb-1 { width:500px;height:500px;background:radial-gradient(circle,#f0b429,transparent);top:-100px;left:-100px; }
-.orb-2 { width:400px;height:400px;background:radial-gradient(circle,#00d4aa,transparent);bottom:-100px;right:-100px;animation-delay:-7s; }
-.orb-3 { width:300px;height:300px;background:radial-gradient(circle,#4facfe,transparent);top:50%;left:50%;animation-delay:-14s; }
-@keyframes drift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-20px,30px) scale(0.95)} }
-.bg-grid { position:fixed;inset:0;z-index:0;pointer-events:none; background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:50px 50px; }
-.app { position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 80px; }
-nav { display:flex;align-items:center;justify-content:space-between;padding:18px 0;margin-bottom:4px; }
-.nav-logo { display:flex;align-items:center;gap:10px; }
-.nav-logo-text { font-size:20px;font-weight:800;color:#fff; }
-.nav-logo-text em { color:var(--gold);font-style:normal; }
-.nav-right { display:flex;align-items:center;gap:8px; }
-.connect-btn { background:linear-gradient(135deg,var(--gold),#e6a817);color:#000;border:none;border-radius:12px;padding:10px 18px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent; }
-.connect-btn:active { transform:scale(0.96); }
-.connect-btn.connected { background:var(--surface2);color:var(--teal);border:1px solid rgba(0,212,170,0.3); }
-.disconnect-btn { background:rgba(255,107,107,0.1);color:var(--red);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:8px 12px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent; }
-.disconnect-btn:active { transform:scale(0.96); }
-.hero { text-align:center;padding:20px 0 28px; }
-.hero-badge { display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.25);border-radius:20px;padding:5px 14px;margin-bottom:14px;font-size:11px;font-family:'DM Mono',monospace;color:var(--teal);text-transform:uppercase;letter-spacing:1px; }
-.hero h1 { font-size:30px;font-weight:800;line-height:1.15;color:#fff;margin-bottom:10px; }
-.hero h1 span { color:var(--gold); }
-.hero p { font-size:13px;color:var(--muted);line-height:1.6;max-width:320px;margin:0 auto; }
-.stats-bar { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px; }
-.stat-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 12px;text-align:center;backdrop-filter:blur(10px);transition:all 0.2s; }
-.stat-card:hover { border-color:var(--border2);transform:translateY(-2px); }
-.stat-val { font-size:18px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace; }
-.stat-label { font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px; }
-.section-label { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace; }
-.section-label::after { content:'';flex:1;height:1px;background:var(--border); }
-.apy-cards { display:flex;flex-direction:column;gap:10px;margin-bottom:20px; }
-.apy-card { background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(10px);transition:all 0.25s;position:relative;overflow:hidden; }
-.apy-card:hover { border-color:var(--border2);transform:translateY(-2px); }
-.apy-card.best { border-color:rgba(0,212,170,0.4);background:rgba(0,212,170,0.05); }
-.apy-icon { width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0; }
-.apy-info { flex:1;min-width:0; }
-.apy-name { font-size:13px;font-weight:700;color:#fff;margin-bottom:3px; }
-.apy-protocol { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
-.apy-right { text-align:right; }
-.apy-rate { font-size:22px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace; }
-.apy-tvl { font-size:10px;color:var(--muted);margin-top:2px; }
-.best-badge { position:absolute;top:10px;right:10px;background:var(--teal);color:#000;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase; }
-.main-tabs { display:flex;gap:4px;background:var(--surface);border-radius:14px;padding:4px;margin-bottom:20px; }
-.main-tab { flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent; }
-.main-tab.active { background:var(--surface2);color:#fff; }
-.panel { background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(10px);margin-bottom:16px; }
-.panel-title { font-size:16px;font-weight:800;color:#fff;margin-bottom:16px; }
-.token-tabs { display:flex;gap:8px;margin-bottom:16px; }
-.token-tab { flex:1;padding:10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent; }
-.token-tab.active { background:linear-gradient(135deg,rgba(240,180,41,0.15),rgba(240,180,41,0.05));border-color:var(--border2);color:var(--gold); }
-.input-wrap { background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px;transition:border-color 0.2s; }
-.input-wrap:focus-within { border-color:var(--border2); }
-.input-label { font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace; }
-.input-row { display:flex;align-items:center;gap:8px; }
-.amount-input { flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'DM Mono',monospace;font-size:22px;font-weight:500; }
-.amount-input::placeholder { color:var(--muted); }
-.max-btn { background:rgba(240,180,41,0.15);border:1px solid var(--border2);color:var(--gold);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif; }
-.balance-row { display:flex;justify-content:space-between;margin-top:8px; }
-.balance-label { font-size:11px;color:var(--muted); }
-.balance-val { font-size:11px;color:var(--teal);font-family:'DM Mono',monospace; }
-.route-preview { background:rgba(0,212,170,0.06);border:1px solid rgba(0,212,170,0.15);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px; }
-.route-row { display:flex;justify-content:space-between;align-items:center;padding:3px 0; }
-.route-key { color:var(--muted); }
-.route-val { color:#fff;font-family:'DM Mono',monospace;font-weight:500; }
-.route-val.gold { color:var(--gold); }
-.route-val.teal { color:var(--teal); }
-.action-btn { width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#e6a817);color:#000;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent; }
-.action-btn:active { transform:scale(0.98); }
-.action-btn:disabled { opacity:0.4;cursor:not-allowed; }
-.action-btn.teal { background:linear-gradient(135deg,var(--teal),#00b894);color:#000; }
-.action-btn.outline { background:transparent;border:1px solid var(--border2);color:var(--gold); }
-.position-card { background:linear-gradient(135deg,rgba(240,180,41,0.08),rgba(0,212,170,0.05));border:1px solid rgba(240,180,41,0.2);border-radius:20px;padding:20px;margin-bottom:16px; }
-.pos-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px; }
-.pos-title { font-size:13px;color:var(--muted);margin-bottom:4px; }
-.pos-amount { font-size:28px;font-weight:800;color:#fff;font-family:'DM Mono',monospace; }
-.pos-token { font-size:13px;color:var(--gold);font-weight:700; }
-.pos-badge { background:rgba(0,212,170,0.15);border:1px solid rgba(0,212,170,0.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;white-space:nowrap; }
-.pos-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px; }
-.pos-item { background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 12px; }
-.pos-item-label { font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px; }
-.pos-item-val { font-size:13px;font-weight:700;color:#fff;font-family:'DM Mono',monospace; }
-.pos-actions { display:flex;gap:8px; }
-.pos-actions button { flex:1; }
-.spinner { width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block; }
-@keyframes spin { to{transform:rotate(360deg)} }
-.toast-wrap { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center; }
-.toast { background:rgba(10,14,23,0.95);border:1px solid var(--border);border-radius:30px;padding:10px 20px;font-size:13px;font-family:'DM Mono',monospace;backdrop-filter:blur(20px);animation:toastIn 0.3s ease;white-space:nowrap; }
-.toast.success { border-color:rgba(16,185,129,0.5);color:#10b981; }
-.toast.error { border-color:rgba(255,107,107,0.5);color:#ff6b6b; }
-.toast.info { border-color:var(--border2);color:var(--gold); }
-@keyframes toastIn { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
-.empty-state { text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;line-height:1.7; }
-.empty-icon { font-size:36px;margin-bottom:12px; }
-.network-warn { background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px; }
-.switch-btn { margin-left:auto;background:none;border:1px solid var(--red);color:var(--red);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'Syne',sans-serif; }
-.contracts-info { margin-top:16px;padding:12px 16px;background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid var(--border); }
-.contracts-title { font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px; }
-.contract-row { display:flex;justify-content:space-between;padding:3px 0;font-size:11px; }
-.contract-name { color:var(--muted); }
-.contract-link { color:var(--teal);font-family:'DM Mono',monospace;text-decoration:none; }
-.skeleton { background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px; }
-@keyframes shimmer { to{background-position:-200% 0} }
+html,body,#root{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow-x:hidden;}
+.bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.15;animation:drift 20s ease-in-out infinite;}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,#f0b429,transparent);top:-100px;left:-100px;}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,#00d4aa,transparent);bottom:-100px;right:-100px;animation-delay:-7s;}
+.orb-3{width:300px;height:300px;background:radial-gradient(circle,#4facfe,transparent);top:50%;left:50%;animation-delay:-14s;}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:50px 50px;}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 80px;}
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0;margin-bottom:4px;}
+.nav-logo{display:flex;align-items:center;gap:10px;}
+.nav-logo-text{font-size:20px;font-weight:800;color:#fff;}
+.nav-logo-text em{color:var(--gold);font-style:normal;}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.connect-btn{background:linear-gradient(135deg,var(--gold),#e6a817);color:#000;border:none;border-radius:12px;padding:10px 18px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.connect-btn:active{transform:scale(0.96);}
+.connect-btn.connected{background:var(--surface2);color:var(--teal);border:1px solid rgba(0,212,170,0.3);}
+.disconnect-btn{background:rgba(255,107,107,0.1);color:var(--red);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:8px 12px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.disconnect-btn:active{transform:scale(0.96);}
+
+/* Wallet Modal */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-sheet{background:#0a1628;border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;animation:slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.wallet-option{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);margin-bottom:10px;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.wallet-option:active{transform:scale(0.98);}
+.wallet-option:hover{border-color:var(--border2);}
+.wallet-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.wallet-info{flex:1;}
+.wallet-name{font-size:14px;font-weight:700;color:#fff;}
+.wallet-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+.wallet-arrow{color:var(--muted);font-size:18px;}
+.modal-cancel{width:100%;padding:14px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;-webkit-tap-highlight-color:transparent;}
+.wc-divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
+.wc-divider-line{flex:1;height:1px;background:var(--border);}
+.wc-divider-text{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+
+.hero{text-align:center;padding:20px 0 28px;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.25);border-radius:20px;padding:5px 14px;margin-bottom:14px;font-size:11px;font-family:'DM Mono',monospace;color:var(--teal);text-transform:uppercase;letter-spacing:1px;}
+.hero h1{font-size:30px;font-weight:800;line-height:1.15;color:#fff;margin-bottom:10px;}
+.hero h1 span{color:var(--gold);}
+.hero p{font-size:13px;color:var(--muted);line-height:1.6;max-width:320px;margin:0 auto;}
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 12px;text-align:center;backdrop-filter:blur(10px);transition:all 0.2s;}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.stat-val{font-size:18px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;}
+.stat-label{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.apy-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.apy-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(10px);transition:all 0.25s;position:relative;overflow:hidden;}
+.apy-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.apy-card.best{border-color:rgba(0,212,170,0.4);background:rgba(0,212,170,0.05);}
+.apy-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.apy-info{flex:1;min-width:0;}
+.apy-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:3px;}
+.apy-protocol{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.apy-right{text-align:right;}
+.apy-rate{font-size:22px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;}
+.apy-tvl{font-size:10px;color:var(--muted);margin-top:2px;}
+.best-badge{position:absolute;top:10px;right:10px;background:var(--teal);color:#000;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;}
+.main-tabs{display:flex;gap:4px;background:var(--surface);border-radius:14px;padding:4px;margin-bottom:20px;}
+.main-tab{flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.main-tab.active{background:var(--surface2);color:#fff;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(10px);margin-bottom:16px;}
+.panel-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;}
+.token-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.token-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.token-tab.active{background:linear-gradient(135deg,rgba(240,180,41,0.15),rgba(240,180,41,0.05));border-color:var(--border2);color:var(--gold);}
+.input-wrap{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px;transition:border-color 0.2s;}
+.input-wrap:focus-within{border-color:var(--border2);}
+.input-label{font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace;}
+.input-row{display:flex;align-items:center;gap:8px;}
+.amount-input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'DM Mono',monospace;font-size:22px;font-weight:500;}
+.amount-input::placeholder{color:var(--muted);}
+.max-btn{background:rgba(240,180,41,0.15);border:1px solid var(--border2);color:var(--gold);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+.balance-row{display:flex;justify-content:space-between;margin-top:8px;}
+.balance-label{font-size:11px;color:var(--muted);}
+.balance-val{font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;}
+.route-preview{background:rgba(0,212,170,0.06);border:1px solid rgba(0,212,170,0.15);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;}
+.route-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
+.route-key{color:var(--muted);}
+.route-val{color:#fff;font-family:'DM Mono',monospace;font-weight:500;}
+.route-val.gold{color:var(--gold);}
+.route-val.teal{color:var(--teal);}
+.action-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#e6a817);color:#000;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;}
+.action-btn:active{transform:scale(0.98);}
+.action-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.action-btn.teal{background:linear-gradient(135deg,var(--teal),#00b894);color:#000;}
+.action-btn.outline{background:transparent;border:1px solid var(--border2);color:var(--gold);}
+.position-card{background:linear-gradient(135deg,rgba(240,180,41,0.08),rgba(0,212,170,0.05));border:1px solid rgba(240,180,41,0.2);border-radius:20px;padding:20px;margin-bottom:16px;}
+.pos-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.pos-title{font-size:13px;color:var(--muted);margin-bottom:4px;}
+.pos-amount{font-size:28px;font-weight:800;color:#fff;font-family:'DM Mono',monospace;}
+.pos-token{font-size:13px;color:var(--gold);font-weight:700;}
+.pos-badge{background:rgba(0,212,170,0.15);border:1px solid rgba(0,212,170,0.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;white-space:nowrap;}
+.pos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pos-item{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 12px;}
+.pos-item-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.pos-item-val{font-size:13px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;}
+.pos-actions{display:flex;gap:8px;}
+.pos-actions button{flex:1;}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:rgba(10,14,23,0.95);border:1px solid var(--border);border-radius:30px;padding:10px 20px;font-size:13px;font-family:'DM Mono',monospace;backdrop-filter:blur(20px);animation:toastIn 0.3s ease;white-space:nowrap;}
+.toast.success{border-color:rgba(16,185,129,0.5);color:#10b981;}
+.toast.error{border-color:rgba(255,107,107,0.5);color:#ff6b6b;}
+.toast.info{border-color:var(--border2);color:var(--gold);}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;line-height:1.7;}
+.empty-icon{font-size:36px;margin-bottom:12px;}
+.network-warn{background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px;}
+.switch-btn{margin-left:auto;background:none;border:1px solid var(--red);color:var(--red);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;}
+.contracts-info{margin-top:16px;padding:12px 16px;background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid var(--border);}
+.contracts-title{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.contract-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;}
+.contract-name{color:var(--muted);}
+.contract-link{color:var(--teal);font-family:'DM Mono',monospace;text-decoration:none;}
+.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+@keyframes shimmer{to{background-position:-200% 0}}
 `;
 
 function BridgeLogo({ size = 36 }) {
@@ -214,20 +209,32 @@ function BridgeLogo({ size = 36 }) {
   );
 }
 
+const WALLETS = [
+  { id: "injected", name: "MetaMask / Browser Wallet", desc: "Connect using your browser wallet", icon: "🦊", color: "#f6851b" },
+  { id: "trust",    name: "Trust Wallet",               desc: "Open in Trust Wallet browser",   icon: "🛡", color: "#3375bb" },
+  { id: "binance",  name: "Binance Web3 Wallet",        desc: "Open in Binance browser",        icon: "🟡", color: "#f0b429" },
+  { id: "wc",       name: "WalletConnect",              desc: "Scan QR with any wallet",        icon: "🔗", color: "#00d4aa" },
+];
+
 export default function App() {
-  const [wallet, setWallet] = useState(null);
-  const [chainOk, setChainOk] = useState(false);
-  const [tab, setTab] = useState("deposit");
-  const [token, setToken] = useState("USDT");
-  const [amount, setAmount] = useState("");
-  const [apyData, setApyData] = useState([]);
-  const [position, setPosition] = useState(null);
-  const [balance, setBalance] = useState("0");
+  const [wallet, setWallet]         = useState(null);
+  const [chainOk, setChainOk]       = useState(false);
+  const [showModal, setShowModal]   = useState(false);
+  const [wcLoading, setWcLoading]   = useState(false);
+  const [tab, setTab]               = useState("deposit");
+  const [token, setToken]           = useState("USDT");
+  const [amount, setAmount]         = useState("");
+  const [apyData, setApyData]       = useState([]);
+  const [position, setPosition]     = useState(null);
+  const [balance, setBalance]       = useState("0");
   const [bestSource, setBestSource] = useState(null);
-  const [feeBps, setFeeBps] = useState(10);
-  const [loading, setLoading] = useState(false);
+  const [feeBps, setFeeBps]         = useState(10);
+  const [loading, setLoading]       = useState(false);
   const [apyLoading, setApyLoading] = useState(true);
-  const [toasts, setToasts] = useState([]);
+  const [toasts, setToasts]         = useState([]);
+  const [connType, setConnType]     = useState(null); // "injected" | "wc"
+
+  const wcProviderRef = useRef(null);
 
   const tokenAddr = token === "USDT" ? CONFIG.contracts.mockUSDT : CONFIG.contracts.mockUSDC;
 
@@ -237,54 +244,113 @@ export default function App() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
   }
 
-  function getProvider() {
-    if (!window.ethereum) throw new Error("No wallet found.");
-    return new ethers.BrowserProvider(window.ethereum);
+  function getReadProvider() {
+    // Always use RPC for reads — no wallet needed
+    return new ethers.JsonRpcProvider(BSC_TESTNET.rpcUrl);
   }
 
-  function getBridgeContract(sp) { return new ethers.Contract(CONFIG.contracts.yieldBridge, BRIDGE_ABI, sp); }
-  function getTokenContract(sp)  { return new ethers.Contract(tokenAddr, ERC20_ABI, sp); }
+  async function getWriteProvider() {
+    if (connType === "wc" && wcProviderRef.current) {
+      return new ethers.BrowserProvider(wcProviderRef.current);
+    }
+    if (window.ethereum) {
+      return new ethers.BrowserProvider(window.ethereum);
+    }
+    throw new Error("No provider available");
+  }
 
-  // Listen to AppKit wallet state changes
-  useEffect(() => {
-    const unsub = modal.subscribeProvider(({ address, chainId, isConnected }) => {
-      if (isConnected && address) {
-        setWallet(address);
-        setChainOk(chainId === 97);
-      } else {
-        setWallet(null);
-        setChainOk(false);
-        setBalance("0");
-        setPosition(null);
+  function getBridgeR() { return new ethers.Contract(CONFIG.contracts.yieldBridge, BRIDGE_ABI, getReadProvider()); }
+  function getBridgeW(s) { return new ethers.Contract(CONFIG.contracts.yieldBridge, BRIDGE_ABI, s); }
+  function getTokenR()  { return new ethers.Contract(tokenAddr, ERC20_ABI, getReadProvider()); }
+  function getTokenW(s) { return new ethers.Contract(tokenAddr, ERC20_ABI, s); }
+
+  // ── Connect injected (MetaMask / Trust / Binance built-in browser) ──────────
+  async function connectInjected() {
+    setShowModal(false);
+    try {
+      if (!window.ethereum) {
+        addToast("Open this site inside your wallet app browser", "error");
+        return;
       }
-    });
-    return () => unsub();
-  }, []);
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      setWallet(accounts[0]);
+      setConnType("injected");
+      await switchToTestnet(window.ethereum);
+      addToast("Wallet connected ✓", "success");
+    } catch (e) {
+      addToast(e.message?.slice(0, 60) || "Connection failed", "error");
+    }
+  }
 
-  function openWalletModal() { modal.open(); }
+  // ── Connect via WalletConnect QR ────────────────────────────────────────────
+  async function connectWalletConnect() {
+    setShowModal(false);
+    setWcLoading(true);
+    try {
+      const provider = await EthereumProvider.init({
+        projectId: WC_PROJECT_ID,
+        chains: [BSC_TESTNET.chainId],
+        optionalChains: [1, 56],
+        showQrModal: true,
+        metadata: {
+          name: "YieldBridge",
+          description: "The Smartest RWA Yield Router on BNB Chain",
+          url: "https://yield-bridge.vercel.app",
+          icons: ["https://yield-bridge.vercel.app/favicon.svg"],
+        },
+      });
 
-  function disconnectWallet() {
-    modal.disconnect();
+      await provider.connect();
+      const accounts = provider.accounts;
+      if (accounts && accounts.length > 0) {
+        wcProviderRef.current = provider;
+        setWallet(accounts[0]);
+        setConnType("wc");
+        setChainOk(provider.chainId === BSC_TESTNET.chainId);
+        addToast("Wallet connected via WalletConnect ✓", "success");
+
+        provider.on("accountsChanged", (accs) => {
+          if (accs.length) setWallet(accs[0]); else disconnect();
+        });
+        provider.on("disconnect", () => disconnect());
+      }
+    } catch (e) {
+      if (!e.message?.includes("User rejected")) {
+        addToast(e.message?.slice(0, 60) || "WalletConnect failed", "error");
+      }
+    } finally {
+      setWcLoading(false);
+    }
+  }
+
+  // ── Disconnect ──────────────────────────────────────────────────────────────
+  async function disconnect() {
+    if (connType === "wc" && wcProviderRef.current) {
+      try { await wcProviderRef.current.disconnect(); } catch {}
+      wcProviderRef.current = null;
+    }
+    setWallet(null);
+    setChainOk(false);
+    setBalance("0");
+    setPosition(null);
+    setConnType(null);
     addToast("Wallet disconnected", "info");
   }
 
-  async function switchNetwork() {
+  async function switchToTestnet(provider) {
     try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x61" }],
-      });
+      await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BSC_TESTNET.chainIdHex }] });
       setChainOk(true);
     } catch (e) {
       if (e.code === 4902) {
-        await window.ethereum.request({
+        await provider.request({
           method: "wallet_addEthereumChain",
           params: [{
-            chainId: "0x61",
-            chainName: "BNB Smart Chain Testnet",
-            rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545/"],
-            nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
-            blockExplorerUrls: ["https://testnet.bscscan.com"],
+            chainId: BSC_TESTNET.chainIdHex,
+            chainName: BSC_TESTNET.name,
+            rpcUrls: [BSC_TESTNET.rpcUrl],
+            nativeCurrency: BSC_TESTNET.nativeCurrency,
+            blockExplorerUrls: [BSC_TESTNET.explorer],
           }],
         });
         setChainOk(true);
@@ -292,11 +358,11 @@ export default function App() {
     }
   }
 
+  // ── Load APYs (no wallet needed — uses RPC) ─────────────────────────────────
   const loadAPYs = useCallback(async () => {
     try {
       setApyLoading(true);
-      const provider = getProvider();
-      const bridge = getBridgeContract(provider);
+      const bridge = getBridgeR();
       const [addrs, names, apys, tvls] = await bridge.getAllAPYs(tokenAddr);
       const [bestAddr] = await bridge.getBestSource(tokenAddr);
       const fee = await bridge.feeBps();
@@ -310,7 +376,7 @@ export default function App() {
   const loadBalance = useCallback(async () => {
     if (!wallet) return;
     try {
-      const bal = await getTokenContract(getProvider()).balanceOf(wallet);
+      const bal = await getTokenR().balanceOf(wallet);
       setBalance(bal.toString());
     } catch (e) { console.error(e); }
   }, [wallet, tokenAddr]);
@@ -318,7 +384,7 @@ export default function App() {
   const loadPosition = useCallback(async () => {
     if (!wallet) return;
     try {
-      const [src, srcName, shares, apy, depositedAt, principal] = await getBridgeContract(getProvider()).getPosition(wallet, tokenAddr);
+      const [src, srcName, shares, apy, depositedAt, principal] = await getBridgeR().getPosition(wallet, tokenAddr);
       if (shares.toString() === "0") { setPosition(null); return; }
       setPosition({ src, srcName, shares: shares.toString(), apy: Number(apy), depositedAt: Number(depositedAt), principal: principal.toString() });
     } catch (e) { console.error(e); }
@@ -327,14 +393,27 @@ export default function App() {
   useEffect(() => { loadAPYs(); }, [loadAPYs]);
   useEffect(() => { if (wallet) { loadBalance(); loadPosition(); } }, [wallet, loadBalance, loadPosition]);
 
+  // Auto reconnect injected
+  useEffect(() => {
+    if (!window.ethereum) return;
+    window.ethereum.request({ method: "eth_accounts" }).then(accs => {
+      if (accs.length) { setWallet(accs[0]); setConnType("injected"); setChainOk(true); }
+    });
+    const onAccounts = (accs) => { if (!accs.length) disconnect(); else setWallet(accs[0]); };
+    window.ethereum.on("accountsChanged", onAccounts);
+    window.ethereum.on("chainChanged", () => window.location.reload());
+    return () => { window.ethereum.removeListener("accountsChanged", onAccounts); };
+  }, []);
+
   async function handleDeposit() {
     if (!wallet) { addToast("Connect wallet first", "error"); return; }
     if (!amount || Number(amount) <= 0) { addToast("Enter a valid amount", "error"); return; }
     setLoading(true);
     try {
-      const signer = await getProvider().getSigner();
-      const tc = getTokenContract(signer);
-      const bc = getBridgeContract(signer);
+      const wp = await getWriteProvider();
+      const signer = await wp.getSigner();
+      const tc = getTokenW(signer);
+      const bc = getBridgeW(signer);
       const amt = ethers.parseUnits(amount, 18);
       const allowance = await tc.allowance(wallet, CONFIG.contracts.yieldBridge);
       if (allowance < amt) {
@@ -354,9 +433,10 @@ export default function App() {
     if (!wallet || !position) return;
     setLoading(true);
     try {
-      const signer = await getProvider().getSigner();
+      const wp = await getWriteProvider();
+      const signer = await wp.getSigner();
       addToast("Withdrawing...", "info");
-      await (await getBridgeContract(signer).withdraw(tokenAddr)).wait();
+      await (await getBridgeW(signer).withdraw(tokenAddr)).wait();
       addToast("Withdrawn successfully ✓", "success");
       loadBalance(); loadPosition();
     } catch (e) { addToast(e.reason || e.message?.slice(0,60) || "Withdraw failed", "error"); }
@@ -367,9 +447,10 @@ export default function App() {
     if (!wallet || !position) return;
     setLoading(true);
     try {
-      const signer = await getProvider().getSigner();
+      const wp = await getWriteProvider();
+      const signer = await wp.getSigner();
       addToast("Rebalancing...", "info");
-      await (await getBridgeContract(signer).rebalance(tokenAddr)).wait();
+      await (await getBridgeW(signer).rebalance(tokenAddr)).wait();
       addToast("Rebalanced to best yield ✓", "success");
       loadPosition();
     } catch (e) { addToast(e.reason || e.message?.slice(0,60) || "Rebalance failed", "error"); }
@@ -384,6 +465,45 @@ export default function App() {
       <style>{CSS}</style>
       <div className="bg-orbs"><div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/></div>
       <div className="bg-grid"/>
+
+      {/* Wallet Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle"/>
+            <div className="modal-title">Connect Wallet</div>
+            <div className="modal-sub">Choose how you want to connect</div>
+
+            {/* WalletConnect first — works from any browser */}
+            <div className="wallet-option" onClick={connectWalletConnect}>
+              <div className="wallet-icon" style={{background:"rgba(0,212,170,0.15)"}}>🔗</div>
+              <div className="wallet-info">
+                <div className="wallet-name">WalletConnect</div>
+                <div className="wallet-desc">Scan QR code with any wallet app</div>
+              </div>
+              <div className="wallet-arrow">›</div>
+            </div>
+
+            <div className="wc-divider">
+              <div className="wc-divider-line"/>
+              <div className="wc-divider-text">or use browser wallet</div>
+              <div className="wc-divider-line"/>
+            </div>
+
+            <div className="wallet-option" onClick={connectInjected}>
+              <div className="wallet-icon" style={{background:"rgba(246,133,27,0.15)"}}>🦊</div>
+              <div className="wallet-info">
+                <div className="wallet-name">MetaMask / Browser Wallet</div>
+                <div className="wallet-desc">Open this site inside your wallet browser</div>
+              </div>
+              <div className="wallet-arrow">›</div>
+            </div>
+
+            <button className="modal-cancel" onClick={() => setShowModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div className="app">
         <nav>
           <div className="nav-logo">
@@ -391,9 +511,9 @@ export default function App() {
             <span className="nav-logo-text">Yield<em>Bridge</em></span>
           </div>
           <div className="nav-right">
-            {wallet && <button className="disconnect-btn" onClick={disconnectWallet}>Disconnect</button>}
-            <button className={`connect-btn ${wallet ? "connected" : ""}`} onClick={openWalletModal}>
-              {wallet ? `🟢 ${shortAddr(wallet)}` : "Connect Wallet"}
+            {wallet && <button className="disconnect-btn" onClick={disconnect}>Disconnect</button>}
+            <button className={`connect-btn ${wallet ? "connected" : ""}`} onClick={() => wallet ? null : setShowModal(true)}>
+              {wcLoading ? "Connecting..." : wallet ? `🟢 ${shortAddr(wallet)}` : "Connect Wallet"}
             </button>
           </div>
         </nav>
@@ -401,7 +521,7 @@ export default function App() {
         {wallet && !chainOk && (
           <div className="network-warn">
             Wrong network. Switch to BSC Testnet.
-            <button className="switch-btn" onClick={switchNetwork}>Switch</button>
+            <button className="switch-btn" onClick={() => switchToTestnet(connType === "wc" ? wcProviderRef.current : window.ethereum)}>Switch</button>
           </div>
         )}
 
@@ -465,7 +585,7 @@ export default function App() {
                 <span className="balance-val">{fmt(balance,18,2)} {token}</span>
               </div>
             </div>
-            {amount && Number(amount) > 0 && bestApy && (
+            {amount && Number(amount)>0 && bestApy && (
               <div className="route-preview">
                 <div className="route-row"><span className="route-key">Routed to</span><span className="route-val teal">{bestApy.name.split("(")[0].trim()}</span></div>
                 <div className="route-row"><span className="route-key">You earn</span><span className="route-val gold">{bpsToPercent(bestApy.apy)}% APY</span></div>
@@ -520,6 +640,7 @@ export default function App() {
           ))}
         </div>
       </div>
+
       <div className="toast-wrap">{toasts.map(t=><div key={t.id} className={`toast ${t.type}`}>{t.msg}</div>)}</div>
     </>
   );
